@@ -562,6 +562,10 @@ export const Editable = (props: EditableProps) => {
           }
         }
 
+        if (type === 'insertReplacementText') {
+          native = true
+        }
+
         // Composition change types occur while a user is composing text and can't be
         // cancelled. Let them through and wait for the composition to end.
         if (isCompositionChange) {
@@ -670,7 +674,14 @@ export const Editable = (props: EditableProps) => {
             // programmatic access of paste events coming from external windows
             // like cypress where cy.window does not work realibly
             if (data?.constructor.name === 'DataTransfer') {
-              ReactEditor.insertData(editor, data)
+              // Use native functionality when replacing existing text by spell checker/auto-correct.
+              if (native && type === 'insertReplacementText') {
+                deferredOperations.current.push(() =>
+                  ReactEditor.insertData(editor, data)
+                )
+              } else {
+                ReactEditor.insertData(editor, data)
+              }
             } else if (typeof data === 'string') {
               // Only insertText operations use the native functionality, for now.
               // Potentially expand to single character deletes, as well.
